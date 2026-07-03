@@ -1,4 +1,4 @@
-                                                          vulnerability and report
+# ADMIN ACESS PANEL FLAW
 
 Target: SecureCorp  Management Portal ( 192.168.1.14 )
 Vulnerability Type: Improper Session Management / Broken Access Control (Cookie Tampering)
