@@ -80,7 +80,8 @@ The modified request was then forwarded to the server. Because the server blindl
 
 Upon forwarding the tampered request, the server responded by loading the administrative dashboard. The application rendered an administrative component containing the requested CTF flag, proving successful privilege escalation.
 
-<img width="1920" height="1080" alt="Screenshot (244)" src="https://github.com/user-attachments/assets/d63131f3-187e-4ab5-a541-9f8aa4532d54" />
+<img width="1920" height="1080" alt="Screenshot (240)" src="https://github.com/user-attachments/assets/bbfa0bab-dd08-42dd-97bb-a4d7db941aed" />
+
 
 
  
