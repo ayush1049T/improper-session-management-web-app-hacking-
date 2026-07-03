@@ -21,6 +21,7 @@ Finding Initial Credentials
 
 The attack methodology began with a thorough review of the application's source code on the login
 page (index.php). Inspecting the HTML source revealed a developer comment mistakenly left in the production environment.
+<img width="986" height="279" alt="ezgif com-gif-maker" src="https://github.com/user-attachments/assets/57403771-21cc-4377-b189-0019bcf8a4dd" />
 
 
 
@@ -45,7 +46,8 @@ Using the discovered credentials, a login attempt was made. Burp Suite was utili
 Analysis of the Flaw: The application tracks authorization state using a plaintext cookie
 (user_role=employee). Because the application trusts the client-provided cookie without server-side validation or cryptographic signatures (such as a JWT or secure session token), it is
 vulnerable to Insecure Direct Object Reference (IDOR) and Privilege Escalation via session tampering.
- 
+ <img width="1920" height="1080" alt="Screenshot (242)" src="https://github.com/user-attachments/assets/2f56e241-646a-4f75-896e-9c0679468612" />
+
 
 
 
@@ -66,6 +68,7 @@ To exploit this vulnerability, the next request to /dashboard.php was intercepte
 
 In Burp Suite's Repeater/Proxy tab, the cookie value was manipulated to escalate privileges to the administrator role:
 The modified request was then forwarded to the server. Because the server blindly trusts the cookie value to determine access levels, the authorization check was successfully bypassed.
+<img width="1920" height="1080" alt="Screenshot (243)" src="https://github.com/user-attachments/assets/356f373a-f7ce-4023-91e7-152a3e324bfc" />
  
 
 
@@ -77,6 +80,7 @@ The modified request was then forwarded to the server. Because the server blindl
 
 Upon forwarding the tampered request, the server responded by loading the administrative dashboard. The application rendered an administrative component containing the requested CTF flag, proving successful privilege escalation.
 
+<img width="1920" height="1080" alt="Screenshot (244)" src="https://github.com/user-attachments/assets/d63131f3-187e-4ab5-a541-9f8aa4532d54" />
 
 
  
