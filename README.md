@@ -19,21 +19,21 @@ Traffic interception via Burp Suite revealed that the application fetches user p
 GET /profile.php?id=SID10582 HTTP/1.1
 It was observed that the server implicitly trusts the client-provided id parameter without properly validating if the currently authenticated session is authorized to view that specific record.
 
- <img width="940" height="529" alt="image" src="https://github.com/user-attachments/assets/5f33f14f-7ac9-4a82-a758-9f1fdb66f2f8" />
+<img width="1920" height="1080" alt="Screenshot (253)" src="https://github.com/user-attachments/assets/57bd8ae5-df0c-4a28-b0df-708d240fe9e5" />
 
 3. Exploitation & Parameter Manipulation
 
  To exploit the IDOR flaw, the target ID discovered during the search phase was substituted into the vulnerable endpoint. Additionally, if the backend enforces role-based checks on the profile page, combining this IDOR with session cookie manipulation (modifying the user_role cookie to admin, as you noted) guarantees the bypass of any secondary authorization filters.
 
- <img width="940" height="529" alt="image" src="https://github.com/user-attachments/assets/0c3f851c-c79a-4c07-bcdc-b84da15f7523" />
- 
+ <img width="1920" height="1080" alt="Screenshot (259)" src="https://github.com/user-attachments/assets/0cad813e-7bf1-4adf-a5f9-ed2fc5426edd" />
+
 •	Target Payload: GET /profile.php?id=SID10001
 
-<img width="940" height="529" alt="image" src="https://github.com/user-attachments/assets/21fb61a6-7d49-4046-8def-7de1b693d828" />
+<img width="1920" height="1080" alt="Screenshot (255)" src="https://github.com/user-attachments/assets/0b22acfe-af62-4bf3-aebb-6e94c2288b8a" />
 
 Proof of Concept: Flag Capture
 
-<img width="940" height="529" alt="image" src="https://github.com/user-attachments/assets/2281df19-1840-4573-bc61-cb5b08554c83" />
+<img width="1920" height="1080" alt="Screenshot (256)" src="https://github.com/user-attachments/assets/9a0fcee1-a1d2-4b6c-9f96-f4187b1d12e3" />
 
 By forwarding the manipulated request, the server successfully returned the restricted profile page for Akshay Admin (CEO).
 Because of the lack of robust server-side access controls, sensitive internal data was fully exposed to the attacker, including:
