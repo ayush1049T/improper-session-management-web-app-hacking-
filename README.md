@@ -29,10 +29,11 @@ It was observed that the server implicitly trusts the client-provided id paramet
  
 •	Target Payload: GET /profile.php?id=SID10001
 
- <img width="940" height="529" alt="image" src="https://github.com/user-attachments/assets/2281df19-1840-4573-bc61-cb5b08554c83" />
-
+<img width="940" height="529" alt="image" src="https://github.com/user-attachments/assets/21fb61a6-7d49-4046-8def-7de1b693d828" />
 
 Proof of Concept: Flag Capture
+
+<img width="940" height="529" alt="image" src="https://github.com/user-attachments/assets/2281df19-1840-4573-bc61-cb5b08554c83" />
 
 By forwarding the manipulated request, the server successfully returned the restricted profile page for Akshay Admin (CEO).
 Because of the lack of robust server-side access controls, sensitive internal data was fully exposed to the attacker, including:
