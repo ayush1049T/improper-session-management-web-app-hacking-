@@ -1,103 +1,46 @@
-# Improper-session-management-web-app-hacking
-"Improper Session Management" is a standard vulnerability category. In CTF environments, this usually means the web application relies on cookies or session tokens that are predictable, fail to expire, or can be manipulated to impersonate another user (usually the admin)
-Vulnerability & Exploitation Report
-Target: SecureCorp Employee Portal
+#Insecure Direct Object Reference (IDOR)
 
-Vulnerability: Improper Session Management & Privilege Escalation
-
+Target: SecureCorp Employee Portal (192.168.1.14)
+Vulnerability: Insecure Direct Object Reference (IDOR)
 Prepared for: TuteDude CyberSecurity Lab Assignment
 
+Executive Summary
 
+This document outlines the successful exploitation of an Insecure Direct Object Reference (IDOR) vulnerability within the SecureCorp Employee Portal. By chaining the site's search functionality with an insecure profile viewing mechanism, it was possible to enumerate administrative identifiers and bypass access controls. This allowed an unprivileged user to access highly sensitive administrative records and retrieve the hidden capture-the-flag (CTF) value.
+Reconnaissance & Attack Methodology
+The successful breach of the administrator's profile followed a specific methodology combining multiple application features:
+1. Information Disclosure via Search Functionality
 
+The attack began by identifying how the application references user accounts. By utilizing the built-in search feature (/search.php?q=admin), the application processes the query and inadvertently leaks the unique identifiers associated with other users. Through this enumeration, the administrator's unique target ID was identified as SID10001.
 
+3. Identifying the IDOR Vulnerability
 
-1.	Executive Summary
+Traffic interception via Burp Suite revealed that the application fetches user profiles using a direct URL parameter. When viewing a standard employee profile (e.g., Abhishek Researcher), the GET request relies on the id parameter:
+GET /profile.php?id=SID10582 HTTP/1.1
+It was observed that the server implicitly trusts the client-provided id parameter without properly validating if the currently authenticated session is authorized to view that specific record.
 
-This document outlines the successful exploitation of an improper session management vulnerability on the SecureCorp Employee Portal. By analyzing client-side code, hardcoded credentials were recovered. Subsequently, traffic interception via Burp Suite revealed an insecure, client-modifiable authorization cookie. By tampering with this cookie, privilege escalation was achieved, granting full administrative access and revealing the hidden capture-the-flag (CTF) value.
+ <img width="940" height="529" alt="image" src="https://github.com/user-attachments/assets/5f33f14f-7ac9-4a82-a758-9f1fdb66f2f8" />
 
-2.	Reconnaissance & Client-Side Analysis
+3. Exploitation & Parameter Manipulation
 
-Finding Initial Credentials
+ To exploit the IDOR flaw, the target ID discovered during the search phase was substituted into the vulnerable endpoint. Additionally, if the backend enforces role-based checks on the profile page, combining this IDOR with session cookie manipulation (modifying the user_role cookie to admin, as you noted) guarantees the bypass of any secondary authorization filters.
 
-The attack methodology began with a thorough review of the application's source code on the login
-page (index.php). Inspecting the HTML source revealed a developer comment mistakenly left in the production environment.
-<img width="986" height="279" alt="ezgif com-gif-maker" src="https://github.com/user-attachments/assets/57403771-21cc-4377-b189-0019bcf8a4dd" />
-
-
-
-
-
-This resulted in identifying valid low-privileged credentials: Username: John | Password:
-babayaga
-
+ <img width="940" height="529" alt="image" src="https://github.com/user-attachments/assets/0c3f851c-c79a-4c07-bcdc-b84da15f7523" />
  
+•	Target Payload: GET /profile.php?id=SID10001
 
-3.	Authentication & Traffic Interception
-
-Identifying the Session Management Flaw
-
-Using the discovered credentials, a login attempt was made. Burp Suite was utilized with Intercept On to capture the server's response. Upon successful authentication, the server issued the following HTTP response headers:
+ <img width="940" height="529" alt="image" src="https://github.com/user-attachments/assets/2281df19-1840-4573-bc61-cb5b08554c83" />
 
 
+Proof of Concept: Flag Capture
 
-
-
-
-Analysis of the Flaw: The application tracks authorization state using a plaintext cookie
-(user_role=employee). Because the application trusts the client-provided cookie without server-side validation or cryptographic signatures (such as a JWT or secure session token), it is
-vulnerable to Insecure Direct Object Reference (IDOR) and Privilege Escalation via session tampering.
- <img width="1920" height="1080" alt="Screenshot (242)" src="https://github.com/user-attachments/assets/2f56e241-646a-4f75-896e-9c0679468612" />
-
-
-
-
-
-
-
-
-
-
-4.	Exploitation & Privilege Escalation
-
-Modifying the Session Cookie
-
-To exploit this vulnerability, the next request to /dashboard.php was intercepted in Burp Suite before it reached the server. The request header originally contained the standard cookie:
-
-
-
-
-In Burp Suite's Repeater/Proxy tab, the cookie value was manipulated to escalate privileges to the administrator role:
-The modified request was then forwarded to the server. Because the server blindly trusts the cookie value to determine access levels, the authorization check was successfully bypassed.
-<img width="1920" height="1080" alt="Screenshot (243)" src="https://github.com/user-attachments/assets/356f373a-f7ce-4023-91e7-152a3e324bfc" />
+By forwarding the manipulated request, the server successfully returned the restricted profile page for Akshay Admin (CEO).
+Because of the lack of robust server-side access controls, sensitive internal data was fully exposed to the attacker, including:
+•	Payroll Information: Current Salary: $500,000
+•	Internal Security Notes: FLAG{IDOR_SENSITIVE_LEAK}
+Captured Flag: FLAG{IDOR_SENSITIVE_LEAK}
  
+Conclusion
 
-
-
-
-
-
-5.	Proof of Concept: Flag Capture
-
-Upon forwarding the tampered request, the server responded by loading the administrative dashboard. The application rendered an administrative component containing the requested CTF flag, proving successful privilege escalation.
-
-<img width="1920" height="1080" alt="Screenshot (240)" src="https://github.com/user-attachments/assets/bbfa0bab-dd08-42dd-97bb-a4d7db941aed" />
-
-
-
- 
-
-
-
-
-
-
-6.	Conclusion and Attack Methodology Summary
-
-The successful breach of the system followed a clear three-step methodology:
-
-•	Information Disclosure: Analyzing front-end code to extract hardcoded default credentials.
-•	Traffic Analysis: Using an interception proxy (Burp Suite) to inspect state-tracking mechanisms, revealing a plaintext role cookie.
-•	Session Tampering (Exploitation): Modifying the insecure cookie from employee to
-admin, resulting in vertical privilege escalation.
-
+The root cause of this vulnerability is the application's reliance on client-provided input (id=SID...) to retrieve sensitive records without performing adequate server-side authorization checks. Because user IDs are easily enumerable via the search page, an attacker can systematically harvest these IDs and feed them into the /profile.php endpoint to compromise the confidentiality of any user on the platform.
 
