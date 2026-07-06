@@ -1,4 +1,4 @@
-#Insecure Direct Object Reference (IDOR)
+# Insecure Direct Object Reference (IDOR)
 
 Target: SecureCorp Employee Portal (192.168.1.14)
 Vulnerability: Insecure Direct Object Reference (IDOR)
