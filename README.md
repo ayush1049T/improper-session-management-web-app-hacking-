@@ -1,103 +1,47 @@
-# Improper-session-management-web-app-hacking
-"Improper Session Management" is a standard vulnerability category. In CTF environments, this usually means the web application relies on cookies or session tokens that are predictable, fail to expire, or can be manipulated to impersonate another user (usually the admin)
-Vulnerability & Exploitation Report
-Target: SecureCorp Employee Portal
+# Vulnerability Assessment Report(OTP)
+Target: SecureCorp Portal (192.168.1.14)
+Vulnerability Type: Insecure Authentication / Lack of Rate Limiting (Brute Force)
+Severity: High
 
-Vulnerability: Improper Session Management & Privilege Escalation
+1. Executive Summary
+A critical vulnerability was identified in the password reset mechanism of the SecureCorp Portal. The application utilizes a 4-digit One-Time Password (OTP) for account recovery but fails to implement adequate rate limiting, attempt thresholds, or expiration policies on the verification endpoint. This allows an attacker to easily brute-force the OTP and achieve complete account takeover.
 
-Prepared for: TuteDude CyberSecurity Lab Assignment
+3. Vulnerability Description
+The endpoint /verify_otp.php processes the submitted OTP for account recovery. The system lacks protections against automated, high-frequency guessing attacks. Because the OTP space is limited to 10,000 possibilities (0000 through 9999) and the application explicitly does not enforce attempt limits or code expiration, an attacker can programmatically iterate through all possible combinations until the correct code is identified and accepted.
+4. Steps to Reproduce
+1.	Initiation: Navigate to the password reset page (/forgot_password.php) and request a reset for a target account (e.g., the admin user).
 
+ <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/acebf7fd-55f3-44de-9ff8-dddc2c0ab60f" />
 
-
-
-
-1.	Executive Summary
-
-This document outlines the successful exploitation of an improper session management vulnerability on the SecureCorp Employee Portal. By analyzing client-side code, hardcoded credentials were recovered. Subsequently, traffic interception via Burp Suite revealed an insecure, client-modifiable authorization cookie. By tampering with this cookie, privilege escalation was achieved, granting full administrative access and revealing the hidden capture-the-flag (CTF) value.
-
-2.	Reconnaissance & Client-Side Analysis
-
-Finding Initial Credentials
-
-The attack methodology began with a thorough review of the application's source code on the login
-page (index.php). Inspecting the HTML source revealed a developer comment mistakenly left in the production environment.
-<img width="986" height="279" alt="ezgif com-gif-maker" src="https://github.com/user-attachments/assets/57403771-21cc-4377-b189-0019bcf8a4dd" />
-
-
-
-
-
-This resulted in identifying valid low-privileged credentials: Username: John | Password:
-babayaga
-
+2.	Observation: The application prompts for a 4-digit code on /verify_otp.php. Developer/Lab notes on the page explicitly state: "codes do not expire and there is no attempt limit."
  
-
-3.	Authentication & Traffic Interception
-
-Identifying the Session Management Flaw
-
-Using the discovered credentials, a login attempt was made. Burp Suite was utilized with Intercept On to capture the server's response. Upon successful authentication, the server issued the following HTTP response headers:
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/d25101a0-055b-4984-91f6-632b12d389ab" />
 
 
-
-
-
-
-Analysis of the Flaw: The application tracks authorization state using a plaintext cookie
-(user_role=employee). Because the application trusts the client-provided cookie without server-side validation or cryptographic signatures (such as a JWT or secure session token), it is
-vulnerable to Insecure Direct Object Reference (IDOR) and Privilege Escalation via session tampering.
- <img width="1920" height="1080" alt="Screenshot (242)" src="https://github.com/user-attachments/assets/2f56e241-646a-4f75-896e-9c0679468612" />
-
-
-
-
-
-
-
-
-
-
-4.	Exploitation & Privilege Escalation
-
-Modifying the Session Cookie
-
-To exploit this vulnerability, the next request to /dashboard.php was intercepted in Burp Suite before it reached the server. The request header originally contained the standard cookie:
-
-
-
-
-In Burp Suite's Repeater/Proxy tab, the cookie value was manipulated to escalate privileges to the administrator role:
-The modified request was then forwarded to the server. Because the server blindly trusts the cookie value to determine access levels, the authorization check was successfully bypassed.
-<img width="1920" height="1080" alt="Screenshot (243)" src="https://github.com/user-attachments/assets/356f373a-f7ce-4023-91e7-152a3e324bfc" />
+3.	Interception: Use an interception proxy (like Burp Suite) to capture the POST request submitted to /verify_otp.php. The captured request reveals the parameter otp and the active session cookie (PHPSESSID).
  
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/0a384c08-8d21-46b3-9712-5ceb27a8b323" />
 
 
-
-
-
-
-5.	Proof of Concept: Flag Capture
-
-Upon forwarding the tampered request, the server responded by loading the administrative dashboard. The application rendered an administrative component containing the requested CTF flag, proving successful privilege escalation.
-
-<img width="1920" height="1080" alt="Screenshot (240)" src="https://github.com/user-attachments/assets/bbfa0bab-dd08-42dd-97bb-a4d7db941aed" />
-
-
-
+4.	Exploitation: Create an automated script (e.g., using Python and the requests library) to iterate through values 0000 to 9999. The script sends a POST request for each value using the captured session cookie.
  
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/3a4d34b7-6577-47dd-8356-165a66791990" />
 
 
+5.	Validation: The script identifies a successful authentication attempt by analyzing the HTTP response. A valid OTP (in this instance, 1337) results in a 302 Found redirect and a response length of 0, whereas invalid attempts return a 200 OK status with a larger content length containing the error message.
+ 
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/c9b824c2-3f77-4833-8b8c-b187fe966f11" />
+ 
+6.	Confirmation: Submitting the discovered code (1337) grants access to the successful account recovery page, yielding the flag: FLAG{BRUTE_FORCE_BYPASS_SUCCESS}.
 
+ <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/f8232bed-5bac-4b88-989b-193389db70cd" />
 
-
-
-6.	Conclusion and Attack Methodology Summary
-
-The successful breach of the system followed a clear three-step methodology:
-
-•	Information Disclosure: Analyzing front-end code to extract hardcoded default credentials.
-•	Traffic Analysis: Using an interception proxy (Burp Suite) to inspect state-tracking mechanisms, revealing a plaintext role cookie.
-•	Session Tampering (Exploitation): Modifying the insecure cookie from employee to
-admin, resulting in vertical privilege escalation.
-
+4. Impact
+This vulnerability allows an unauthenticated attacker to bypass the account recovery security controls and gain unauthorized access to any user account on the portal. Because it was demonstrated against the admin account, the impact includes complete administrative compromise of the application.
+5. Remediation Recommendations
+To mitigate this vulnerability, the following security controls should be implemented on the OTP verification process:
+•	Implement Rate Limiting & Account Lockout: Restrict the maximum number of failed OTP attempts (e.g., 3 to 5 maximum attempts). Once the threshold is reached, invalidate the current OTP and temporarily lock the account recovery feature for that user to stall automated attacks.
+•	Implement Time-Based Expiration: Ensure that generated OTPs have a short, strict validity window (e.g., 5 to 10 minutes) before they automatically expire.
+•	Increase Code Complexity (Optional but Recommended): Increase the length of the OTP (e.g., 6 or 8 digits) or introduce alphanumeric characters to exponentially increase the time required for a successful brute-force attack.
+•	Implement CAPTCHA: Integrate a CAPTCHA mechanism on the verification form to prevent automated scripts from submitting requests.
 
